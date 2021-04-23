@@ -54,7 +54,13 @@ public final class PersistenceUnitsHolder {
         if (persistenceUnitName == null) {
             key = NO_NAME_TOKEN;
         }
-        return persistenceUnits.recordedStates.remove(key);
+        // FIXME: Changed from remove() to get() to enable DevUI to generate schema scripts.
+        //  The "pop" behavior makes it impossible to construct persistence provider repeatedly (which is needed
+        //  in order to execute `persistenceProvider.generateSchema()`).
+        //  The reason why the recorded state is removed here is to clear away the PU metadata after
+        //  the boot process, when they are no longer needed.
+        //  Would it be OK not to remove the metadata during the dev-mode execution?
+        return persistenceUnits.recordedStates.get(key);
     }
 
     private static List<PersistenceUnitDescriptor> convertPersistenceUnits(
