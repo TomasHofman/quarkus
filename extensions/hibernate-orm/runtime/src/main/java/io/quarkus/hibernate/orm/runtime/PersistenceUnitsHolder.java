@@ -14,6 +14,7 @@ import io.quarkus.hibernate.orm.runtime.boot.FastBootMetadataBuilder;
 import io.quarkus.hibernate.orm.runtime.boot.QuarkusPersistenceUnitDefinition;
 import io.quarkus.hibernate.orm.runtime.proxies.PreGeneratedProxies;
 import io.quarkus.hibernate.orm.runtime.recording.RecordedState;
+import io.quarkus.runtime.LaunchMode;
 
 public final class PersistenceUnitsHolder {
 
@@ -54,13 +55,13 @@ public final class PersistenceUnitsHolder {
         if (persistenceUnitName == null) {
             key = NO_NAME_TOKEN;
         }
-        // FIXME: Changed from remove() to get() to enable DevUI to generate schema scripts.
-        //  The "pop" behavior makes it impossible to construct persistence provider repeatedly (which is needed
-        //  in order to execute `persistenceProvider.generateSchema()`).
-        //  The reason why the recorded state is removed here is to clear away the PU metadata after
-        //  the boot process, when they are no longer needed.
-        //  Would it be OK not to remove the metadata during the dev-mode execution?
-        return persistenceUnits.recordedStates.get(key);
+        // Do not remove the PU metadata in dev-mode, we need them to generate information for DevUI pages.
+        // In normal mode, we want to remove these metadata as the associated memory cost is large.
+        if (LaunchMode.DEVELOPMENT == LaunchMode.current()) {
+            return persistenceUnits.recordedStates.get(key);
+        } else {
+            return persistenceUnits.recordedStates.remove(key);
+        }
     }
 
     private static List<PersistenceUnitDescriptor> convertPersistenceUnits(
