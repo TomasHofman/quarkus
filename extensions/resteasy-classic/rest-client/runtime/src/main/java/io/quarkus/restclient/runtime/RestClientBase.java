@@ -14,6 +14,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -50,6 +51,10 @@ public class RestClientBase {
     public static final String REST_HOSTNAME_VERIFIER = "%s/" + MP_REST + "/hostnameVerifier";
     public static final String REST_NOOP_HOSTNAME_VERIFIER = "io.quarkus.restclient.NoopHostnameVerifier";
     public static final String TLS_TRUST_ALL = "quarkus.tls.trust-all";
+    public static final String REST_CONNECTION_TTL = "%s/" + MP_REST + "/connectionTTL";
+    public static final String REST_MAX_POOLED_PER_ROUTE = "%s/" + MP_REST + "/maxPooledPerRoute";
+    public static final String REST_CONNECTION_CHECKOUT_TIMEOUT = "%s/" + MP_REST + "/connectionCheckoutTimeout";
+    public static final String REST_CONNECTION_POOL_SIZE = "%s/" + MP_REST + "/connectionPoolSize";
 
     private final Class<?> proxyType;
     private final String baseUriFromAnnotation;
@@ -70,6 +75,7 @@ public class RestClientBase {
         configureTimeouts(builder);
         configureProviders(builder);
         configureSsl(builder);
+        configureResteasyParameters(builder);
         // If we have context propagation, then propagate context to the async client threads
         InstanceHandle<ManagedExecutor> managedExecutor = Arc.container().instance(ManagedExecutor.class);
         if (managedExecutor.isAvailable()) {
@@ -245,6 +251,29 @@ public class RestClientBase {
         Optional<Long> readTimeout = getOptionalDynamicProperty(REST_READ_TIMEOUT_FORMAT, Long.class);
         if (readTimeout.isPresent()) {
             builder.readTimeout(readTimeout.get(), TimeUnit.MILLISECONDS);
+        }
+    }
+
+    private void configureResteasyParameters(RestClientBuilder builder) {
+        Optional<Long> connectionTTL = getOptionalDynamicProperty(REST_CONNECTION_TTL, Long.class);
+        if (connectionTTL.isPresent()) {
+            builder.property("resteasy.connectionTTL", Arrays.asList(connectionTTL.get(), TimeUnit.MILLISECONDS));
+        }
+
+        Optional<Integer> maxPooledPerRoute = getOptionalDynamicProperty(REST_MAX_POOLED_PER_ROUTE, Integer.class);
+        if (maxPooledPerRoute.isPresent()) {
+            builder.property("resteasy.maxPooledPerRoute", maxPooledPerRoute.get());
+        }
+
+        Optional<Long> connectionCheckoutTimeout = getOptionalDynamicProperty(REST_CONNECTION_CHECKOUT_TIMEOUT, Long.class);
+        if (connectionCheckoutTimeout.isPresent()) {
+            builder.property("resteasy.connectionCheckoutTimeout",
+                    Arrays.asList(connectionCheckoutTimeout.get(), TimeUnit.MILLISECONDS));
+        }
+
+        Optional<Integer> connectionPoolSize = getOptionalDynamicProperty(REST_CONNECTION_POOL_SIZE, Integer.class);
+        if (connectionPoolSize.isPresent()) {
+            builder.property("resteasy.connectionPoolSize", connectionPoolSize.get());
         }
     }
 
