@@ -27,6 +27,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.graalvm.nativeimage.ImageInfo;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.client.jaxrs.engines.PassthroughTrustManager;
 
 import io.quarkus.arc.Arc;
@@ -60,6 +61,8 @@ public class RestClientBase {
     private final String baseUriFromAnnotation;
     private final String propertyPrefix;
     private final Class<?>[] annotationProviders;
+
+    private static Logger logger = Logger.getLogger(RestClientBase.class);
 
     public RestClientBase(Class<?> proxyType, String baseUriFromAnnotation, String propertyPrefix,
             Class<?>[] annotationProviders) {
@@ -257,6 +260,7 @@ public class RestClientBase {
     private void configureResteasyParameters(RestClientBuilder builder) {
         Optional<Long> connectionTTL = getOptionalDynamicProperty(REST_CONNECTION_TTL, Long.class);
         if (connectionTTL.isPresent()) {
+            logger.infof("Setting Resteasy connection TTL to %d ms", connectionTTL.get());
             builder.property("resteasy.connectionTTL", Arrays.asList(connectionTTL.get(), TimeUnit.MILLISECONDS));
         }
 
