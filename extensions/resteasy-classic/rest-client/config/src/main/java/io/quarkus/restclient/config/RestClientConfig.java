@@ -1,6 +1,5 @@
 package io.quarkus.restclient.config;
 
-import java.util.Map;
 import java.util.Optional;
 
 import org.eclipse.microprofile.rest.client.ext.QueryParamStyle;
@@ -129,6 +128,8 @@ public class RestClientConfig {
 
     /**
      * The maximum number of redirection a request can follow.
+     *
+     * This property is applicable to reactive REST clients only.
      */
     @ConfigItem
     public Optional<Integer> maxRedirects;
