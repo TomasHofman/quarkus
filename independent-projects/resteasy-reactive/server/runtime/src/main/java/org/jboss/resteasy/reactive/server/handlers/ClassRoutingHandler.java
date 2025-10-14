@@ -66,7 +66,7 @@ public class ClassRoutingHandler implements ServerRestHandler {
                 mapper = mappers.get(null);
             }
             if (mapper == null) {
-                if (requestContext.restartWithNextInitialMatch()) {
+                if (tryNextInitialMatch(requestContext)) {
                     return;
                 }
                 // The idea here is to check if any of the mappers of the class could map the request - if the HTTP Method were correct
@@ -92,7 +92,7 @@ public class ClassRoutingHandler implements ServerRestHandler {
             }
 
             if (target == null) {
-                if (requestContext.restartWithNextInitialMatch()) {
+                if (tryNextInitialMatch(requestContext)) {
                     return;
                 }
                 // The idea here is to check if any of the mappers of the class could map the request - if the HTTP Method were correct
@@ -250,6 +250,37 @@ public class ClassRoutingHandler implements ServerRestHandler {
 
     private String getRemaining(ResteasyReactiveRequestContext requestContext) {
         return requestContext.getRemaining().isEmpty() ? "/" : requestContext.getRemaining();
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean tryNextInitialMatch(ResteasyReactiveRequestContext requestContext) {
+        List<RequestMapper.RequestMatch<RestInitialHandler.InitialMatch>> remainingMatches = (List<RequestMapper.RequestMatch<RestInitialHandler.InitialMatch>>) requestContext
+                .getProperty("remainingInitialMatches");
+
+        if (remainingMatches == null || remainingMatches.isEmpty()) {
+            return false;
+        }
+
+        // Get the next match and update the remaining list
+        RequestMapper.RequestMatch<RestInitialHandler.InitialMatch> nextMatch = remainingMatches.get(0);
+        List<RequestMapper.RequestMatch<RestInitialHandler.InitialMatch>> newRemainingMatches = remainingMatches.size() > 1
+                ? remainingMatches.subList(1, remainingMatches.size())
+                : List.of();
+
+        // Restart with the next match
+        requestContext.setMaxPathParams(nextMatch.value.maxPathParams);
+        requestContext.restart(nextMatch.value.handlers);
+        requestContext.setRemaining(nextMatch.remaining);
+        for (int i = 0; i < nextMatch.pathParamValues.length; ++i) {
+            String pathParamValue = nextMatch.pathParamValues[i];
+            if (pathParamValue == null) {
+                break;
+            }
+            requestContext.setPathParamValue(i, nextMatch.pathParamValues[i]);
+        }
+        requestContext.setProperty("remainingInitialMatches", newRemainingMatches);
+
+        return true;
     }
 
     public Map<String, RequestMapper<RuntimeResource>> getMappers() {

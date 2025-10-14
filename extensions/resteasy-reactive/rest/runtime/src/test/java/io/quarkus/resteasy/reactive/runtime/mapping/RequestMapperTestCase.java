@@ -34,23 +34,24 @@ public class RequestMapperTestCase {
     }
 
     @Test
-    public void testContinueMatching() {
+    public void testMapAll() {
         RequestMapper<String> mapper = mapper(true, "/greetings", "/greetings/{id}", "/greetings/unrelated");
         mapper.dump();
 
-        var result = mapper.map("/not-existing");
-        Assertions.assertNull(result);
+        var results = mapper.mapAll("/not-existing");
+        Assertions.assertTrue(results.isEmpty());
 
-        result = mapper.map("/greetings/greeting-id");
-        Assertions.assertNotNull(result);
-        Assertions.assertEquals("", result.remaining);
-
-        result = mapper.continueMatching("/greetings/greeting-id", result);
-        Assertions.assertNotNull(result);
-        Assertions.assertEquals("/greeting-id", result.remaining);
-
-        result = mapper.continueMatching("/greetings/greeting-id", result);
-        Assertions.assertNull(result);
+        results = mapper.mapAll("/greetings/greeting-id");
+        Assertions.assertFalse(results.isEmpty());
+        // Should have two matches: /greetings and /greetings/{id}
+        Assertions.assertEquals(2, results.size());
+        // First match should be /greetings with remaining="/greeting-id"
+        Assertions.assertEquals("/greetings", results.get(0).value);
+        Assertions.assertEquals("/greeting-id", results.get(0).remaining);
+        // Second match should be /greetings/{id} with remaining=""
+        Assertions.assertEquals("/greetings/{id}", results.get(1).value);
+        Assertions.assertEquals("", results.get(1).remaining);
+        Assertions.assertEquals("greeting-id", results.get(1).pathParamValues[0]);
     }
 
     RequestMapper<String> mapper(boolean prefixTemplates, String... vals) {

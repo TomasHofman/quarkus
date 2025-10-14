@@ -1,18 +1,19 @@
 package org.jboss.resteasy.reactive.server.vertx.test.matching;
 
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
+
+import java.util.function.Supplier;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
+
 import org.jboss.resteasy.reactive.RestPath;
 import org.jboss.resteasy.reactive.server.vertx.test.framework.ResteasyReactiveUnitTest;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
-
-import java.util.function.Supplier;
-
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
 
 class OverlappingResourceClassPathTest {
     @RegisterExtension

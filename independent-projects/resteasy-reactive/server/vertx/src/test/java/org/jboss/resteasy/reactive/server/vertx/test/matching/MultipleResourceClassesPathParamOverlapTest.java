@@ -1,20 +1,19 @@
 package org.jboss.resteasy.reactive.server.vertx.test.matching;
 
+import static io.restassured.RestAssured.get;
+import static org.hamcrest.Matchers.equalTo;
+
+import java.util.function.Supplier;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
+
 import org.jboss.resteasy.reactive.RestPath;
 import org.jboss.resteasy.reactive.server.vertx.test.framework.ResteasyReactiveUnitTest;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
-
-import java.util.function.Supplier;
-
-import static io.restassured.RestAssured.get;
-import static org.hamcrest.Matchers.equalTo;
 
 public class MultipleResourceClassesPathParamOverlapTest {
 
@@ -59,7 +58,7 @@ public class MultipleResourceClassesPathParamOverlapTest {
                 .statusCode(200)
                 .body(equalTo("Foo bar_value"));
 
-        get("/hello/foo/foo/bar")
+        get("/hello/foo/bar/foo/bar")
                 .then()
                 .statusCode(200)
                 .body(equalTo("FooBarFooBar"));
@@ -82,7 +81,6 @@ public class MultipleResourceClassesPathParamOverlapTest {
         }
 
     }
-
 
     @Path("/hello/foo/bar")
     public static class AnotherResource {

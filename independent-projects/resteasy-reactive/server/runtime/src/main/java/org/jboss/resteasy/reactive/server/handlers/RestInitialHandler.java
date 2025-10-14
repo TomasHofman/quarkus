@@ -58,8 +58,8 @@ public class RestInitialHandler implements ServerRestHandler {
 
     @Override
     public void handle(ResteasyReactiveRequestContext requestContext) throws Exception {
-        RequestMapper.RequestMatch<InitialMatch> target = mappers.map(requestContext.getPathWithoutPrefix());
-        if (target == null) {
+        List<RequestMapper.RequestMatch<InitialMatch>> targets = mappers.mapAll(requestContext.getPathWithoutPrefix());
+        if (targets.isEmpty()) {
             ProvidersImpl providers = requestContext.getProviders();
             ExceptionMapper<NotFoundException> exceptionMapper = providers.getExceptionMapper(NotFoundException.class);
 
@@ -72,8 +72,22 @@ public class RestInitialHandler implements ServerRestHandler {
             } else if (requestContext.resumeExternalProcessing()) {
                 return;
             }
+        } else {
+            RequestMapper.RequestMatch<InitialMatch> target = targets.get(0);
+            requestContext.restart(target.value.handlers);
+            requestContext.setMaxPathParams(target.value.maxPathParams);
+            requestContext.setRemaining(target.remaining);
+            for (int i = 0; i < target.pathParamValues.length; ++i) {
+                String pathParamValue = target.pathParamValues[i];
+                if (pathParamValue == null) {
+                    break;
+                }
+                requestContext.setPathParamValue(i, target.pathParamValues[i]);
+            }
+            // Store remaining targets in case the first one doesn't pan out
+            requestContext.setProperty("remainingInitialMatches",
+                    targets.size() > 1 ? targets.subList(1, targets.size()) : List.of());
         }
-        requestContext.setupInitialMatchAndRestart(target);
     }
 
     public static class InitialMatch {
